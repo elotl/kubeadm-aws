@@ -20,3 +20,6 @@ license-password = "FILL_IN"
 # Optional parameters. URL and version of the Milpa node agent.
 #itzo-url = ""
 #itzo-version = ""
+# The network plugin to use. Set it to either "kubenet" (the default one) or
+# "cni".
+#network-plugin = "kubenet"

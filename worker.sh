@@ -25,7 +25,7 @@ nodeRegistration:
   name: $name
   kubeletExtraArgs:
     cloud-provider: aws
-    network-plugin: kubenet
+    network-plugin: ${network_plugin}
     non-masquerade-cidr: 0.0.0.0/0
 EOF
 

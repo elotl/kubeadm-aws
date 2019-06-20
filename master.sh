@@ -20,6 +20,14 @@ while [[ -z "$name" ]]; do
     name="$(hostname -f)"
 done
 
+# When using kubenet, we rely on the cloud controller to create cloud routes
+# for the pod subnet CIDR that gets allocated to each worker node. When using
+# CNI, however, we expect the plugin to configure routing.
+configure_cloud_routes="true"
+if [[ "${network_plugin}" != "kubenet" ]]; then
+    configure_cloud_routes="false"
+fi
+
 cat <<EOF > /tmp/kubeadm-config.yaml
 apiVersion: kubeadm.k8s.io/v1beta1
 kind: InitConfiguration
@@ -31,7 +39,7 @@ nodeRegistration:
   name: $name
   kubeletExtraArgs:
     cloud-provider: aws
-    network-plugin: kubenet
+    network-plugin: ${network_plugin}
     non-masquerade-cidr: 0.0.0.0/0
 ---
 apiVersion: kubeadm.k8s.io/v1beta1
@@ -48,7 +56,7 @@ apiServer:
 controllerManager:
   extraArgs:
     cloud-provider: aws
-    configure-cloud-routes: "true"
+    configure-cloud-routes: "$configure_cloud_routes"
     address: 0.0.0.0
 EOF
 kubeadm init --config=/tmp/kubeadm-config.yaml
@@ -77,11 +85,17 @@ reclaimPolicy: Retain
 EOF
 kubectl apply -f /tmp/storageclass.yaml
 
-mkdir -p /tmp/ip-masq-agent-config
-cat <<EOF > /tmp/ip-masq-agent-config/config
+if [[ "${network_plugin}" = "kubenet" ]]; then
+    mkdir -p /tmp/ip-masq-agent-config
+    cat <<EOF > /tmp/ip-masq-agent-config/config
 nonMasqueradeCIDRs:
   - ${pod_cidr}
   - ${subnet_cidr}
 EOF
-kubectl create -n kube-system configmap ip-masq-agent --from-file=/tmp/ip-masq-agent-config/config
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-incubator/ip-masq-agent/master/ip-masq-agent.yaml
+    kubectl create -n kube-system configmap ip-masq-agent --from-file=/tmp/ip-masq-agent-config/config
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes-incubator/ip-masq-agent/master/ip-masq-agent.yaml
+elif [[ "${network_plugin}" = "cni" ]]; then
+    kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter.yaml
+else
+    echo "WARNING: network plugin ${network_plugin} not recognized"
+fi

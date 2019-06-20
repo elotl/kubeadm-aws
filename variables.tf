@@ -91,3 +91,8 @@ variable "pod-cidr" {
 variable "service-cidr" {
   default = "10.96.0.0/12"
 }
+
+variable "network-plugin" {
+  // Should be either "cni" or "kubenet".
+  default = "kubenet"
+}

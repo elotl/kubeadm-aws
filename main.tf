@@ -409,6 +409,7 @@ data "template_file" "master-userdata" {
     pod_cidr = "${var.pod-cidr}"
     service_cidr = "${var.service-cidr}"
     subnet_cidr = "${var.subnet-cidr}"
+    network_plugin = "${var.network-plugin}"
   }
 }
 
@@ -439,7 +440,7 @@ data "template_file" "worker-userdata" {
   vars {
     k8stoken = "${local.k8stoken}"
     masterIP = "${aws_instance.k8s-master.private_ip}"
-    pod_cidr = "${var.pod-cidr}"
+    network_plugin = "${var.network-plugin}"
   }
 }
 

@@ -5,10 +5,46 @@ cat <<EOF > /etc/apt/sources.list.d/kubernetes.list
 deb http://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 apt-get update
-apt-get install -y kubelet=${k8s_version} kubeadm=${k8s_version} kubectl=${k8s_version} kubernetes-cni docker.io python-pip jq
+apt-get install -y kubelet=${k8s_version} kubeadm=${k8s_version} kubectl=${k8s_version} kubernetes-cni containerd python-pip jq
 
-# Docker sets the policy for the FORWARD chain to DROP, change it back.
-iptables -P FORWARD ACCEPT
+modprobe br_netfilter
+sysctl net.bridge.bridge-nf-call-iptables=1
+sysctl net.ipv4.ip_forward=1
+
+mkdir -p /etc/cni/net.d
+mkdir -p /etc/containerd
+cat <<EOF > /etc/containerd/config.toml
+[plugins.cri]
+  [plugins.cri.cni]
+    conf_template = "/etc/containerd/cni-template.json"
+EOF
+cat <<EOF > /etc/containerd/cni-template.json
+{
+  "cniVersion": "0.3.1",
+  "name": "containerd-net",
+  "plugins": [
+    {
+      "type": "bridge",
+      "bridge": "cni0",
+      "isGateway": true,
+      "ipMasq": true,
+      "promiscMode": true,
+      "ipam": {
+        "type": "host-local",
+        "subnet": "{{.PodCIDR}}",
+        "routes": [
+          { "dst": "0.0.0.0/0" }
+        ]
+      }
+    },
+    {
+      "type": "portmap",
+      "capabilities": {"portMappings": true}
+    }
+  ]
+}
+EOF
+systemctl restart containerd
 
 name=""
 while [[ -z "$name" ]]; do
@@ -26,6 +62,7 @@ discovery:
     apiServerEndpoint: ${masterIP}:6443
 nodeRegistration:
   name: $name
+  criSocket: unix:///run/containerd/containerd.sock
   kubeletExtraArgs:
     cloud-provider: aws
     network-plugin: kubenet

@@ -1,0 +1,196 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: env-config
+data:
+  SERVICE_CIDR: 10.96.0.0/12
+  POD_CIDR: 172.20.0.0/16
+  AWS_ACCESS_KEY_ID: ""
+  AWS_SECRET_ACCESS_KEY: ""
+  LICENSE_KEY: ""
+  LICENSE_ID: ""
+  LICENSE_USERNAME: ""
+  LICENSE_PASSWORD: ""
+  FAKE_CPU_NUMBER: "1024"
+  FAKE_MEMORY_GB: "4096"
+  MAX_PODS: "1000"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kiyot
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kiyot-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - endpoints
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kiyot
+roleRef:
+  kind: ClusterRole
+  name: kiyot-role
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: kiyot
+  namespace: default
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kiyot
+  labels:
+    app: kiyot
+spec:
+  clusterIP: None
+  selector:
+    app: kiyot
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kiyot
+spec:
+  replicas: 1
+  serviceName: kiyot
+  selector:
+    matchLabels:
+      app: kiyot
+  template:
+    metadata:
+      name: kiyot
+      labels:
+        app: kiyot
+    spec:
+      nodeSelector:
+        runtime: kiyot
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - kiyot
+            topologyKey: "kubernetes.io/hostname"
+      serviceAccountName: kiyot
+      volumes:
+      - name: etc-systemd
+        hostPath:
+          path: /etc/systemd/system
+      - name: run-dbus
+        hostPath:
+          path: /run/dbus
+      - name: run-systemd
+        hostPath:
+          path: /run/systemd
+      - name: run-criproxy
+        hostPath:
+          path: /run/criproxy
+      - name: run-containerd
+        hostPath:
+          path: /run/containerd
+      - name: rootfs
+        hostPath:
+          path: /rootfs
+      - name: kubelet-pods
+        hostPath:
+          path: /var/lib/kubelet/pods
+      - name: shared
+        emptyDir: {}
+      restartPolicy: Always
+      initContainers:
+      - name: milpa-init
+        image: elotl/milpa
+        command:
+        - bash
+        - -c
+        - "/milpa-init.sh /shared/milpa"
+        envFrom:
+        - configMapRef:
+            name: env-config
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: run-dbus
+          mountPath: /run/dbus
+        - name: run-systemd
+          mountPath: /run/systemd
+        - name: etc-systemd
+          mountPath: /etc/systemd/system
+          readOnly: true
+        - name: rootfs
+          mountPath: /rootfs
+        - name: shared
+          mountPath: /shared
+      containers:
+      - name: kiyot
+        image: elotl/milpa
+        command:
+        - /kiyot
+        - --stderrthreshold=1
+        - --logtostderr
+        - --cert-dir=/shared/milpa/certs
+        - --listen=/shared/kiyot.sock
+        - --milpa-endpoint=127.0.0.1:54555
+        - --service-cluster-ip-range=$SERVICE_CIDR
+        - --kubeconfig=
+        env:
+        - name: SERVICE_CIDR
+          valueFrom:
+            configMapKeyRef:
+              name: env-config
+              key: SERVICE_CIDR
+        volumeMounts:
+        - name: shared
+          mountPath: /shared
+        - name: kubelet-pods
+          mountPath: /var/lib/kubelet/pods
+      - name: milpa
+        image: elotl/milpa
+        command:
+        - /milpa
+        - --stderrthreshold=1
+        - --logtostderr
+        - --cert-dir=/shared/milpa/certs
+        - --config=/shared/milpa/server.yml
+        - --delete-cluster-lock-file
+        volumeMounts:
+        - name: shared
+          mountPath: /shared
+      - name: criproxy
+        image: elotl/criproxy
+        command:
+        - /criproxy
+        - -v=3
+        - -logtostderr
+        - -listen=/run/criproxy/criproxy.sock
+        - -connect=/run/containerd/containerd.sock,kiyot:/shared/kiyot.sock
+        volumeMounts:
+        - name: shared
+          mountPath: /shared
+        - name: run-containerd
+          mountPath: /run/containerd
+        - name: run-criproxy
+          mountPath: /run/criproxy

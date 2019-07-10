@@ -514,7 +514,7 @@ resource "aws_instance" "k8s-worker" {
   key_name = "${var.ssh-key-name}"
   associate_public_ip_address = true
   vpc_security_group_ids = ["${aws_security_group.kubernetes.id}"]
-  iam_instance_profile = "${aws_iam_instance_profile.k8s-worker.id}"
+  iam_instance_profile = "${aws_iam_instance_profile.k8s-milpa-worker.id}"
 
   depends_on = ["aws_internet_gateway.gw"]
 

@@ -39,7 +39,7 @@ variable "aws-secret-access-key" {
 
 variable "milpa-installer-url" {
   // The URL to download the Milpa installer from.
-  default = "https://download.elotl.co/milpa-installer-latest"
+  default = "https://download.elotl.co/bcox-milpa-kiyot-crds-installer"
 }
 
 variable "itzo-url" {
@@ -109,4 +109,8 @@ variable "k8s-version" {
   // using the latest version available. Don't forget the last asterisk, since
   // packages are named 1.13.5-00, 1.14.0-00, etc.
   default = "*"
+}
+
+variable "k8stoken" {
+  default = ""
 }

@@ -141,3 +141,13 @@ spec:
         name: kube-proxy
 EOF
 kubectl apply -f /tmp/kube-proxy-milpa.yaml
+# adding admin to
+# kubectl create clusterrolebinding cluster-admin-binding-$(NODE_NAME) --clusterrole=cluster-admin --user=system:node:$(NODE_NAME)
+for i in {1..50}; do
+    if kubectl get nodes | grep milpa-worker; then
+	nodename=$(kubectl get nodes | grep milpa-worker | awk '{print $1}')
+	kubectl create clusterrolebinding cluster-admin-binding-$nodename --clusterrole=cluster-admin --user=system:node:$nodename
+	break
+    fi
+    sleep 10
+done

@@ -107,6 +107,10 @@ sed -i 's#--config /opt/milpa/etc/server.yml$#--config /opt/milpa/etc/server.yml
 mkdir -p /etc/systemd/system/kubelet.service.d/
 echo -e "[Service]\nStartLimitInterval=0\nStartLimitIntervalSec=0\nRestart=always\nRestartSec=5" > /etc/systemd/system/kubelet.service.d/override.conf
 
+systemctl daemon-reload
+systemctl restart milpa
+systemctl restart kiyot
+
 # Override number of CPUs and memory cadvisor reports.
 infodir=/run/kiyot/proc
 mkdir -p $infodir; rm -f $infodir/{cpu,mem}info
@@ -194,8 +198,3 @@ done
 
 # Join cluster.
 for i in {1..50}; do kubeadm join --config=/tmp/kubeadm-config.yaml && break || sleep 15; done
-
-systemctl daemon-reload
-systemctl restart milpa
-systemctl restart kiyot
-systemctl restart kubelet

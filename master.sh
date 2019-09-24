@@ -88,7 +88,7 @@ nonMasqueradeCIDRs:
 $(for subnet in ${subnet_cidrs}; do echo "  - $subnet"; done)
 EOF
 kubectl create -n kube-system configmap ip-masq-agent --from-file=/tmp/ip-masq-agent-config/config
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-incubator/ip-masq-agent/master/ip-masq-agent.yaml
+kubectl apply -f https://raw.githubusercontent.com/elotl/ip-masq-agent/vilmos-manifest-fix/ip-masq-agent.yaml
 kubectl patch -n kube-system daemonset ip-masq-agent --patch '{"spec":{"template":{"spec":{"tolerations":[{"effect":"NoSchedule","key":"node-role.kubernetes.io/master"}]}}}}'
 
 # Start a kube-proxy deployment for Milpa. This will route cluster IP traffic

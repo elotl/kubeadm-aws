@@ -118,7 +118,7 @@ spec:
       - command:
         - /usr/local/bin/kube-proxy
         - --config=/var/lib/kube-proxy/config.conf
-        - --hostname-override=$(NODE_NAME)
+        - --hostname-override=\$(NODE_NAME)
         env:
         - name: NODE_NAME
           valueFrom:

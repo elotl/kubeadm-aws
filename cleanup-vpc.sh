@@ -5,8 +5,9 @@
 
 function usage() {
     {
-        echo "Usage $0 <vpc-id>"
-        echo "You can also set the environment variable VPC_ID."
+        echo "Usage $0 <vpc-id> <cluster-name>"
+        echo "You can also set the environment variables"
+        echo "VPC_ID and CLUSTER_NAME."
     } >&2
     exit 1
 }
@@ -24,6 +25,14 @@ if [[ "$1" != "" ]]; then
     VPC_ID="$1"
 fi
 if [[ -z "$VPC_ID" ]]; then
+    usage
+fi
+shift
+
+if [[ "$1" != "" ]]; then
+    CLUSTER_NAME="$1"
+fi
+if [[ -z "$CLUSTER_NAME" ]]; then
     usage
 fi
 shift
@@ -73,6 +82,16 @@ if [[ -n "$sgs" ]]; then
     echo "$sgs"
     for sg in $sgs; do
         aws ec2 delete-security-group --group-id $sg > /dev/null 2>&1
+    done
+fi
+
+# Delete volumes created by this cluster.
+vols=$(aws ec2 describe-volumes --filters "Name=tag:kubernetes.io/cluster/$CLUSTER_NAME,Values=owned" "Name=status,Values=creating,available" | jq -r ".Volumes | .[] | .VolumeId")
+if [[ -n "$vols" ]]; then
+    echo "Removing volumes:"
+    echo "$vols"
+    for vol in $vols; do
+        aws ec2 delete-volume --volume-id $vol > /dev/null 2>&1
     done
 fi
 

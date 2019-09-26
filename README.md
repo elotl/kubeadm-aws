@@ -49,11 +49,17 @@ At this point, the cluster is ready to use.
 
 ## Run a Pod
 
-To schedule pods via Milpa, you have to add an annotation to select the correct node:
+Stateless pods (no persistent volume claims or locally attached volumes) will be scheduled via Milpa. For example:
 
     ubuntu@ip-10-0-100-66:~$ kubectl run nginx --image=nginx
 
-If you have both Milpa and non-Milpa workers in your cluster, you will also have to add a `nodeSelector` as above, otherwise pods will also be scheduled to run on non-Milpa workers.
+will run the pod(s) created by the deployment via Milpa.
+
+If you have both Milpa and non-Milpa workers in your cluster, you can also use a `nodeSelector` to assign a pod to a non-Milpa worker. Label your non-Milpa worker node with e.g. `mycompany.com/worker`, then add a nodeselector:
+
+    spec:
+      nodeSelector:
+        mycompany.com/worker: ""
 
 ## Teardown
 

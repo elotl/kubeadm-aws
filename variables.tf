@@ -154,3 +154,7 @@ variable "blacklisted-azs" {
 variable "milpa-image" {
   default = "elotl/milpa"
 }
+
+variable "milpa-worker-ami" {
+  default = ""
+}

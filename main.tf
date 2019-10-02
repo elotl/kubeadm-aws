@@ -473,9 +473,13 @@ resource "aws_instance" "k8s-master" {
   }
 }
 
+locals {
+  milpa_worker_ami = length(var.milpa-worker-ami) > 0 ? var.milpa-worker-ami : data.aws_ami.ubuntu.id
+}
+
 # TODO: make node_nametag unique per milpa worker.
 resource "aws_instance" "k8s-milpa-worker" {
-  ami                         = data.aws_ami.ubuntu.id
+  ami                         = local.milpa_worker_ami
   instance_type               = "t2.medium"
   count                       = var.milpa-workers
   subnet_id                   = element(aws_subnet.subnets.*.id, count.index)

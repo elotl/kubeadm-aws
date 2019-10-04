@@ -48,6 +48,7 @@ EOF
 }
 EOF
 fi
+systemctl enable containerd
 systemctl restart containerd
 
 # Install criproxy.
@@ -67,6 +68,7 @@ RestartSec=10
 WantedBy=kubelet.service
 EOF
 systemctl daemon-reload
+systemctl enable criproxy
 systemctl restart criproxy
 
 # Configure kubelet.
@@ -130,7 +132,8 @@ ExecStop=/bin/umount /proc/meminfo
 StandardOutput=journal
 EOF
 systemctl daemon-reload
-systemctl start kiyot-override-proc
+systemctl enable kiyot-override-proc
+systemctl restart kiyot-override-proc
 
 # Join cluster.
 kubeadm join --config=/tmp/kubeadm-config.yaml

@@ -7,18 +7,21 @@ EOF
 apt-get update
 apt-get install -y kubelet="${k8s_version}*" kubeadm="${k8s_version}*" kubectl="${k8s_version}*" kubernetes-cni containerd
 
-# Configure containerd. This assumes kubenet is used for networking.
 modprobe br_netfilter
 sysctl net.bridge.bridge-nf-call-iptables=1; echo "net.bridge.bridge-nf-call-iptables=1" >> /etc/sysctl.conf
 sysctl net.ipv4.ip_forward=1; echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
 mkdir -p /etc/cni/net.d
-mkdir -p /etc/containerd
-cat <<EOF > /etc/containerd/config.toml
+
+if [[ "${network_plugin}" = "kubenet" ]]; then
+    # For kubenet, containerd needs a cni config template so it will use the
+    # node's pod CIDR.
+    mkdir -p /etc/containerd
+    cat <<EOF > /etc/containerd/config.toml
 [plugins.cri]
   [plugins.cri.cni]
     conf_template = "/etc/containerd/cni-template.json"
 EOF
-cat <<EOF > /etc/containerd/cni-template.json
+    cat <<EOF > /etc/containerd/cni-template.json
 {
   "cniVersion": "0.3.1",
   "name": "containerd-net",
@@ -44,6 +47,7 @@ cat <<EOF > /etc/containerd/cni-template.json
   ]
 }
 EOF
+fi
 systemctl restart containerd
 
 # Install criproxy.
@@ -85,8 +89,10 @@ nodeRegistration:
   criSocket: unix:///run/criproxy.sock
   kubeletExtraArgs:
     cloud-provider: aws
-    network-plugin: kubenet
-    non-masquerade-cidr: 0.0.0.0/0
+$(if [[ "${network_plugin}" = "kubenet" ]]; then
+    echo "    network-plugin: kubenet"
+    echo "    non-masquerade-cidr: 0.0.0.0/0"
+fi)
     max-pods: "1000"
     node-labels: elotl.co/milpa-worker=""
 EOF

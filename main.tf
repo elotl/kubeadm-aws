@@ -398,25 +398,27 @@ data "template_file" "master-userdata" {
   template = file(var.master-userdata)
 
   vars = {
-    k8stoken              = local.k8stoken
-    k8s_version           = var.k8s-version
-    pod_cidr              = var.pod-cidr
-    service_cidr          = var.service-cidr
-    subnet_cidrs          = join(" ", aws_subnet.subnets.*.cidr_block)
-    node_nametag          = var.cluster-name
-    aws_access_key_id     = var.aws-access-key-id
-    aws_secret_access_key = var.aws-secret-access-key
-    aws_region            = var.region
-    default_instance_type = var.default-instance-type
-    default_volume_size   = var.default-volume-size
-    boot_image_tags       = jsonencode(var.boot-image-tags)
-    license_key           = var.license-key
-    license_id            = var.license-id
-    license_username      = var.license-username
-    license_password      = var.license-password
-    itzo_url              = var.itzo-url
-    itzo_version          = var.itzo-version
-    milpa_image           = var.milpa-image
+    k8stoken                = local.k8stoken
+    k8s_version             = var.k8s-version
+    pod_cidr                = var.pod-cidr
+    service_cidr            = var.service-cidr
+    subnet_cidrs            = join(" ", aws_subnet.subnets.*.cidr_block)
+    node_nametag            = var.cluster-name
+    aws_access_key_id       = var.aws-access-key-id
+    aws_secret_access_key   = var.aws-secret-access-key
+    aws_region              = var.region
+    default_instance_type   = var.default-instance-type
+    default_volume_size     = var.default-volume-size
+    boot_image_tags         = jsonencode(var.boot-image-tags)
+    license_key             = var.license-key
+    license_id              = var.license-id
+    license_username        = var.license-username
+    license_password        = var.license-password
+    itzo_url                = var.itzo-url
+    itzo_version            = var.itzo-version
+    milpa_image             = var.milpa-image
+    network_plugin          = var.network-plugin
+    configure_cloud_routes  = var.configure-cloud-routes
   }
 }
 
@@ -424,9 +426,10 @@ data "template_file" "milpa-worker-userdata" {
   template = file(var.milpa-worker-userdata)
 
   vars = {
-    k8stoken    = local.k8stoken
-    k8s_version = var.k8s-version
-    masterIP    = aws_instance.k8s-master.private_ip
+    k8stoken        = local.k8stoken
+    k8s_version     = var.k8s-version
+    masterIP        = aws_instance.k8s-master.private_ip
+    network_plugin  = var.network-plugin
   }
 }
 
@@ -434,10 +437,10 @@ data "template_file" "worker-userdata" {
   template = file(var.worker-userdata)
 
   vars = {
-    k8stoken    = local.k8stoken
-    k8s_version = var.k8s-version
-    masterIP    = aws_instance.k8s-master.private_ip
-    pod_cidr    = var.pod-cidr
+    k8stoken        = local.k8stoken
+    k8s_version     = var.k8s-version
+    masterIP        = aws_instance.k8s-master.private_ip
+    network_plugin  = var.network-plugin
   }
 }
 

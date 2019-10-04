@@ -59,8 +59,10 @@ nodeRegistration:
   name: $name
   kubeletExtraArgs:
     cloud-provider: aws
-    network-plugin: kubenet
-    non-masquerade-cidr: 0.0.0.0/0
+$(if [[ "${network_plugin}" = "kubenet" ]]; then
+    echo '    network-plugin: kubenet'
+    echo '    non-masquerade-cidr: 0.0.0.0/0'
+fi)
 ---
 apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration

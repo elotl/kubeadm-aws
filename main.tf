@@ -466,14 +466,11 @@ resource "aws_instance" "k8s-master" {
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.kubernetes.id]
   iam_instance_profile        = aws_iam_instance_profile.k8s-master.id
+  source_dest_check           = false
 
   depends_on = [aws_internet_gateway.gw]
 
   tags = merge(local.k8s_cluster_tags, local.k8s_milpa_master_tag)
-
-  lifecycle {
-    ignore_changes = [source_dest_check]
-  }
 }
 
 locals {
@@ -491,6 +488,7 @@ resource "aws_instance" "k8s-milpa-worker" {
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.kubernetes.id]
   iam_instance_profile        = aws_iam_instance_profile.k8s-milpa-worker.id
+  source_dest_check           = false
 
   root_block_device {
     volume_size = var.worker-disk-size
@@ -516,13 +514,6 @@ resource "aws_instance" "k8s-milpa-worker" {
       "AWS_DEFAULT_REGION" = var.region
     }
   }
-
-  lifecycle {
-    # This seems like a bug in Terraform or the AWS provider - even though
-    # userdata is the same, TF thinks it has changed, which forces a
-    # replacement of the instance. Let's ignore userdata changes for now.
-    ignore_changes = [source_dest_check]
-  }
 }
 
 resource "aws_instance" "k8s-worker" {
@@ -535,6 +526,7 @@ resource "aws_instance" "k8s-worker" {
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.kubernetes.id]
   iam_instance_profile        = aws_iam_instance_profile.k8s-worker.id
+  source_dest_check           = false
 
   root_block_device {
     volume_size = var.worker-disk-size
@@ -543,8 +535,4 @@ resource "aws_instance" "k8s-worker" {
   depends_on = [aws_internet_gateway.gw]
 
   tags = merge(local.k8s_cluster_tags, local.k8s_milpa_worker_tag)
-
-  lifecycle {
-    ignore_changes = [source_dest_check]
-  }
 }

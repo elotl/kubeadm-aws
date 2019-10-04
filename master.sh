@@ -74,9 +74,13 @@ apiServer:
 controllerManager:
   extraArgs:
     cloud-provider: aws
-    configure-cloud-routes: "true"
+$(if [[ "${configure_cloud_routes}" = "true" ]]; then
+    echo '    configure-cloud-routes: "true"'
+else
+    echo '    configure-cloud-routes: "false"'
+fi)
     address: 0.0.0.0
-kubernetesVersion: "${k8s_version}"
+kubernetesVersion: "$k8s_version"
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration

@@ -30,7 +30,7 @@ EOF
       "type": "bridge",
       "bridge": "cni0",
       "isGateway": true,
-      "ipMasq": true,
+      "ipMasq": false,
       "promiscMode": true,
       "ipam": {
         "type": "host-local",

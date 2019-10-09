@@ -32,6 +32,9 @@ locals {
     "Name"                                      = "kubeadm-milpa-${var.cluster-name}"
     "kubernetes.io/cluster/${var.cluster-name}" = "owned"
   }
+  k8s_milpa_master_tag = {"Name" = "kubeadm-milpa-master-${var.cluster-name}"}
+  k8s_milpa_nodeless_worker_tag = {"Name" = "kubeadm-milpa-nodeless-worker-${var.cluster-name}"}
+  k8s_milpa_worker_tag = {"Name" = "kubeadm-milpa-worker-${var.cluster-name}"}
 }
 
 data "aws_availability_zones" "available-azs" {
@@ -466,7 +469,7 @@ resource "aws_instance" "k8s-master" {
 
   depends_on = [aws_internet_gateway.gw]
 
-  tags = local.k8s_cluster_tags
+  tags = merge(local.k8s_cluster_tags, local.k8s_milpa_master_tag)
 
   lifecycle {
     ignore_changes = [source_dest_check]
@@ -495,7 +498,7 @@ resource "aws_instance" "k8s-milpa-worker" {
 
   depends_on = [aws_internet_gateway.gw]
 
-  tags = local.k8s_cluster_tags
+  tags = merge(local.k8s_cluster_tags, local.k8s_milpa_nodeless_worker_tag)
 
   provisioner "local-exec" {
     when    = destroy
@@ -539,7 +542,7 @@ resource "aws_instance" "k8s-worker" {
 
   depends_on = [aws_internet_gateway.gw]
 
-  tags = local.k8s_cluster_tags
+  tags = merge(local.k8s_cluster_tags, local.k8s_milpa_worker_tag)
 
   lifecycle {
     ignore_changes = [source_dest_check]

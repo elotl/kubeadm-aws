@@ -158,3 +158,11 @@ variable "milpa-image" {
 variable "milpa-worker-ami" {
   default = ""
 }
+
+variable "network-plugin" {
+  default = "kubenet"
+}
+
+variable "configure-cloud-routes" {
+  default = "true"
+}

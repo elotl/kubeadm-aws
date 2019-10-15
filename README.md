@@ -61,6 +61,10 @@ If you have both Milpa and non-Milpa workers in your cluster, you can also use a
       nodeSelector:
         mycompany.com/worker: ""
 
+## Networking
+
+By default, kubenet is used. You can change this via setting the variable `network-plugin`. Currently `kubenet`, `kube-router`, `flannel` and `calico` are supported.
+
 ## Teardown
 
 Make sure all pods and services are removed. On the master:

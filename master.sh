@@ -59,8 +59,10 @@ nodeRegistration:
   name: $name
   kubeletExtraArgs:
     cloud-provider: aws
-    network-plugin: kubenet
-    non-masquerade-cidr: 0.0.0.0/0
+$(if [[ "${network_plugin}" = "kubenet" ]]; then
+    echo '    network-plugin: kubenet'
+    echo '    non-masquerade-cidr: 0.0.0.0/0'
+fi)
 ---
 apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
@@ -74,9 +76,13 @@ apiServer:
 controllerManager:
   extraArgs:
     cloud-provider: aws
-    configure-cloud-routes: "true"
+$(if [[ "${configure_cloud_routes}" = "true" ]]; then
+    echo '    configure-cloud-routes: "true"'
+else
+    echo '    configure-cloud-routes: "false"'
+fi)
     address: 0.0.0.0
-kubernetesVersion: "${k8s_version}"
+kubernetesVersion: "$k8s_version"
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
@@ -91,6 +97,11 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 mkdir -p /home/ubuntu/.kube
 sudo cp -i $KUBECONFIG /home/ubuntu/.kube/config
 sudo chown ubuntu: /home/ubuntu/.kube/config
+
+# Networking.
+if [[ "${network_plugin}" != "kubenet" ]]; then
+    curl -fL https://raw.githubusercontent.com/elotl/milpa-deploy/master/deploy/cni/${network_plugin}.yaml | envsubst | kubectl apply -f -
+fi
 
 # Create a default storage class, backed by EBS.
 curl -fL https://raw.githubusercontent.com/elotl/milpa-deploy/master/deploy/storageclass-ebs.yaml | envsubst | kubectl apply -f -

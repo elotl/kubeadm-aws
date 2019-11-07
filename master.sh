@@ -16,6 +16,12 @@ while [[ -z "$name" ]]; do
     name="$(hostname -f)"
 done
 
+ip=""
+while [[ -z "$ip" ]]; do
+    sleep 1
+    ip="$(host $name | awk '{print $4}')"
+done
+
 if [ -z ${k8s_version} ]; then
     k8s_version=$(curl -fL https://storage.googleapis.com/kubernetes-release/release/stable.txt)
 else
@@ -58,6 +64,7 @@ bootstrapTokens:
 nodeRegistration:
   name: $name
   kubeletExtraArgs:
+    node-ip: $ip
     cloud-provider: aws
 $(if [[ "${network_plugin}" = "kubenet" ]]; then
     echo '    network-plugin: kubenet'

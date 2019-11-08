@@ -67,17 +67,7 @@ By default, kubenet is used. You can change this via setting the variable `netwo
 
 ## Teardown
 
-Make sure all pods and services are removed. On the master:
-
-    ubuntu@ip-10-0-100-66:~$ for ns in $(kubectl get namespaces | tail -n+2 | awk '{print $1}'); do kubectl delete --all deployments --namespace=$ns; kubectl delete --all services --namespace=$ns; kubectl delete --all daemonsets --namespace=$ns; kubectl delete --all pods --namespace=$ns; done
-    No resources found
-    service "kubernetes" deleted
-    No resources found
-    No resources found
-    [...]
-    ubuntu@ip-10-0-100-66:~$
-
-Then you can log out from the master, and use Terraform to tear down the infrastructure:
+Use Terraform to tear down the infrastructure:
 
     $ terraform destroy -var-file ~/env.tfvars
     [...]

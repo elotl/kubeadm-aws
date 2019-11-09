@@ -63,7 +63,7 @@ If you have both Milpa and non-Milpa workers in your cluster, you can also use a
 
 ## Networking
 
-By default, kubenet is used. You can change this via setting the variable `network-plugin`. Currently `kubenet`, `kube-router`, `flannel` and `calico` are supported.
+By default, kubenet is used. You can change this via setting the variable `network-plugin`. Currently `kubenet`, `kube-router`, `flannel`, `aws-k8s-cni` and `calico` are supported.
 
 ## Teardown
 

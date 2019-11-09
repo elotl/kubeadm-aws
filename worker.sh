@@ -16,6 +16,12 @@ while [[ -z "$name" ]]; do
     name="$(hostname -f)"
 done
 
+ip=""
+while [[ -z "$ip" ]]; do
+    sleep 1
+    ip="$(host $name | awk '{print $4}')"
+done
+
 cat <<EOF > /tmp/kubeadm-config.yaml
 apiVersion: kubeadm.k8s.io/v1beta1
 kind: JoinConfiguration
@@ -27,6 +33,7 @@ discovery:
 nodeRegistration:
   name: $name
   kubeletExtraArgs:
+    node-ip: $ip
     cloud-provider: aws
 $(if [[ "${network_plugin}" = "kubenet" ]]; then
     echo "    network-plugin: kubenet"

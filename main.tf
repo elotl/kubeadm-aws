@@ -335,7 +335,19 @@ resource "aws_iam_role_policy" "k8s-milpa-worker" {
         "ec2:UnassignPrivateIpAddresses",
         "ecr:BatchGetImage",
         "ecr:GetAuthorizationToken",
-        "ecr:GetDownloadUrlForLayer"
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:GetDownloadUrlForLayer",
+        "ecs:CreateCluster",
+        "ecs:DeregisterTaskDefinition",
+        "ecs:DescribeClusters",
+        "ecs:DescribeTasks",
+        "ecs:ListAccountSettings",
+        "ecs:ListTaskDefinitions",
+        "ecs:ListTasks",
+        "ecs:PutAccountSetting",
+        "ecs:RegisterTaskDefinition",
+        "ecs:RunTask",
+        "ecs:StopTask"
       ],
       "Resource": "*"
     }
@@ -440,6 +452,7 @@ data "template_file" "master-userdata" {
     node_nametag            = var.cluster-name
     aws_access_key_id       = var.aws-access-key-id
     aws_secret_access_key   = var.aws-secret-access-key
+    ecs_cluster_name        = var.ecs-cluster-name
     aws_region              = var.region
     default_instance_type   = var.default-instance-type
     default_volume_size     = var.default-volume-size

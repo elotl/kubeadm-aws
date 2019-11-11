@@ -166,3 +166,7 @@ variable "network-plugin" {
 variable "configure-cloud-routes" {
   default = "true"
 }
+
+variable "ecs-cluster-name" {
+  default = ""
+}

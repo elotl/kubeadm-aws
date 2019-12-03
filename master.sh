@@ -105,6 +105,8 @@ mkdir -p /home/ubuntu/.kube
 sudo cp -i $KUBECONFIG /home/ubuntu/.kube/config
 sudo chown ubuntu: /home/ubuntu/.kube/config
 
+export server_url="$(kubectl config view -ojsonpath='{.clusters[0].cluster.server}')"
+
 # Networking.
 if [[ "${network_plugin}" != "kubenet" ]]; then
     curl -fL https://raw.githubusercontent.com/elotl/milpa-deploy/master/deploy/cni/${network_plugin}.yaml | envsubst | kubectl apply -f -

@@ -39,7 +39,7 @@ export aws_region="${aws_region}"
 export ecs_cluster_name="${ecs_cluster_name}"
 export default_instance_type="${default_instance_type}"
 export default_volume_size="${default_volume_size}"
-export boot_image_tags="${boot_image_tags}"
+export boot_image_tags='${boot_image_tags}'
 export license_key="${license_key}"
 export license_id="${license_id}"
 export license_username="${license_username}"
@@ -105,6 +105,8 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 mkdir -p /home/ubuntu/.kube
 sudo cp -i $KUBECONFIG /home/ubuntu/.kube/config
 sudo chown ubuntu: /home/ubuntu/.kube/config
+
+export server_url="$(kubectl config view -ojsonpath='{.clusters[0].cluster.server}')"
 
 # Networking.
 if [[ "${network_plugin}" != "kubenet" ]]; then

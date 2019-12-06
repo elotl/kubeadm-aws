@@ -36,6 +36,7 @@ export node_nametag="${node_nametag}"
 export aws_access_key_id="${aws_access_key_id}"
 export aws_secret_access_key="${aws_secret_access_key}"
 export aws_region="${aws_region}"
+export ecs_cluster_name="${ecs_cluster_name}"
 export default_instance_type="${default_instance_type}"
 export default_volume_size="${default_volume_size}"
 export boot_image_tags='${boot_image_tags}'

@@ -4,8 +4,13 @@ curl -fL https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 cat <<EOF > /etc/apt/sources.list.d/kubernetes.list
 deb http://apt.kubernetes.io/ kubernetes-xenial main
 EOF
-apt-get update
-apt-get install -y kubelet="${k8s_version}*" kubeadm="${k8s_version}*" kubectl="${k8s_version}*" kubernetes-cni containerd
+apt-add-repository ppa:projectatomic/ppa
+apt-get update -qq
+if [[ "${container_runtime}" = "crio" ]]; then
+    apt-get install -y kubelet="${k8s_version}*" kubeadm="${k8s_version}*" kubectl="${k8s_version}*" kubernetes-cni cri-o-1.15 python-pip jq
+else
+    apt-get install -y kubelet="${k8s_version}*" kubeadm="${k8s_version}*" kubectl="${k8s_version}*" kubernetes-cni containerd
+fi
 
 modprobe br_netfilter
 sysctl net.bridge.bridge-nf-call-iptables=1; echo "net.bridge.bridge-nf-call-iptables=1" >> /etc/sysctl.conf
@@ -48,18 +53,29 @@ EOF
 }
 EOF
 fi
-systemctl enable containerd
-systemctl restart containerd
+
+if [[ "${container_runtime}" = "crio" ]]; then
+    # Cri-o configuration.
+    pip install remarshal
+    remarshal --if toml -i /etc/crio/crio.conf --of json | jq ".crio.runtime.cgroup_manager=\"cgroupfs\" | .crio.runtime.conmon = \"$(which conmon)\" | .crio.image.registries=[\"docker.io\"]" | remarshal --if json --of toml > /tmp/crio.conf; mv /tmp/crio.conf /etc/crio/crio.conf
+    rm -f /etc/cni/net.d/*
+    mkdir -p /usr/local/libexec
+    ln -s /usr/libexec/crio /usr/local/libexec/crio
+fi
+
+# Enable primary container runtime.
+systemctl enable ${container_runtime}
+systemctl restart ${container_runtime}
 
 # Install criproxy.
 curl -fL https://github.com/elotl/criproxy/releases/download/v0.15.1/criproxy > /usr/local/bin/criproxy; chmod 755 /usr/local/bin/criproxy
 cat <<EOF > /etc/systemd/system/criproxy.service
 [Unit]
 Description=CRI Proxy
-Wants=containerd.service
+Wants=${container_runtime}.service
 
 [Service]
-ExecStart=/usr/local/bin/criproxy -v 3 -logtostderr -connect /run/containerd/containerd.sock,kiyot:/run/milpa/kiyot.sock -listen /run/criproxy.sock
+ExecStart=/usr/local/bin/criproxy -v 3 -logtostderr -connect /run/${container_runtime}/${container_runtime}.sock,kiyot:/run/milpa/kiyot.sock -listen /run/criproxy.sock
 Restart=always
 StartLimitInterval=0
 RestartSec=10

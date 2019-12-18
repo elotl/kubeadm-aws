@@ -78,6 +78,9 @@ networking:
   podSubnet: ${pod_cidr}
   serviceSubnet: ${service_cidr}
 apiServer:
+  certSANs:
+  - 127.0.0.1
+  - localhost
   extraArgs:
     enable-admission-plugins: DefaultStorageClass,NodeRestriction
     cloud-provider: aws

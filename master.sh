@@ -94,11 +94,12 @@ else
 fi)
     address: 0.0.0.0
 kubernetesVersion: "$k8s_version"
----
-apiVersion: kubeproxy.config.k8s.io/v1alpha1
-kind: KubeProxyConfiguration
-iptables:
-  masqueradeAll: true
+# Enable kube-proxy masqueradeAll if kiyot-kube-proxy is enabled.
+#---
+#apiVersion: kubeproxy.config.k8s.io/v1alpha1
+#kind: KubeProxyConfiguration
+#iptables:
+#  masqueradeAll: true
 EOF
 kubeadm init --config=/tmp/kubeadm-config.yaml
 

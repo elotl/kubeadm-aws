@@ -125,7 +125,10 @@ curl -fL https://raw.githubusercontent.com/elotl/milpa-deploy/master/deploy/ip-m
 # Deploy Kiyot/Milpa components.
 curl -fL https://raw.githubusercontent.com/elotl/milpa-deploy/master/deploy/kiyot.yaml | envsubst | kubectl apply -f -
 
-curl -fL https://raw.githubusercontent.com/elotl/milpa-deploy/master/deploy/kiyot-kube-proxy.yaml | envsubst | kubectl apply -f -
+# Uncomment this if the fargate backend is in use. In that case, we also need
+# to start a kube-proxy pod for cells, since fargate cells don't have their own
+# service proxy running.
+#curl -fL https://raw.githubusercontent.com/elotl/milpa-deploy/master/deploy/kiyot-kube-proxy.yaml | envsubst | kubectl apply -f -
 
 curl -fL https://raw.githubusercontent.com/elotl/milpa-deploy/master/deploy/kiyot-device-plugin.yaml | envsubst | kubectl apply -f -
 

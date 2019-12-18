@@ -34,7 +34,6 @@ locals {
   }
   k8s_milpa_master_tag = {"Name" = "kubeadm-milpa-master-${var.cluster-name}"}
   k8s_milpa_nodeless_worker_tag = {"Name" = "kubeadm-milpa-nodeless-worker-${var.cluster-name}"}
-  k8s_milpa_worker_tag = {"Name" = "kubeadm-milpa-worker-${var.cluster-name}"}
 }
 
 data "aws_availability_zones" "available-azs" {
@@ -354,74 +353,11 @@ resource "aws_iam_role_policy" "k8s-milpa-worker" {
   ]
 }
 EOF
-
 }
 
 resource "aws_iam_instance_profile" "k8s-milpa-worker" {
   name = "k8s-milpa-worker-${var.cluster-name}"
   role = aws_iam_role.k8s-milpa-worker.name
-}
-
-resource "aws_iam_role" "k8s-worker" {
-  name               = "k8s-worker-${var.cluster-name}"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "ec2.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
-EOF
-
-}
-
-resource "aws_iam_role_policy" "k8s-worker" {
-  name = "k8s-worker-${var.cluster-name}"
-  role = aws_iam_role.k8s-worker.id
-  policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:AssignPrivateIpAddresses",
-        "ec2:AttachNetworkInterface",
-        "ec2:CreateNetworkInterface",
-        "ec2:DeleteNetworkInterface",
-        "ec2:DescribeInstances",
-        "ec2:DescribeInstances",
-        "ec2:DescribeNetworkInterfaces",
-        "ec2:DescribeRegions",
-        "ec2:DescribeTags",
-        "ec2:DetachNetworkInterface",
-        "ec2:ModifyNetworkInterfaceAttribute",
-        "ec2:UnassignPrivateIpAddresses",
-        "ecr:GetAuthorizationToken",
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:GetRepositoryPolicy",
-        "ecr:DescribeRepositories",
-        "ecr:ListImages",
-        "ecr:BatchGetImage"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-EOF
-
-}
-
-resource "aws_iam_instance_profile" "k8s-worker" {
-  name = "k8s-worker-${var.cluster-name}"
-  role = aws_iam_role.k8s-worker.name
 }
 
 resource "random_id" "k8stoken-prefix" {
@@ -471,17 +407,6 @@ data "template_file" "master-userdata" {
 
 data "template_file" "milpa-worker-userdata" {
   template = file(var.milpa-worker-userdata)
-
-  vars = {
-    k8stoken        = local.k8stoken
-    k8s_version     = var.k8s-version
-    masterIP        = aws_instance.k8s-master.private_ip
-    network_plugin  = var.network-plugin
-  }
-}
-
-data "template_file" "worker-userdata" {
-  template = file(var.worker-userdata)
 
   vars = {
     k8stoken        = local.k8stoken
@@ -564,25 +489,4 @@ resource "aws_instance" "k8s-milpa-worker" {
       "AWS_DEFAULT_REGION" = var.region
     }
   }
-}
-
-resource "aws_instance" "k8s-worker" {
-  ami                         = data.aws_ami.ubuntu.id
-  instance_type               = "t2.medium"
-  count                       = var.workers
-  subnet_id                   = element(aws_subnet.subnets.*.id, count.index)
-  user_data                   = data.template_file.worker-userdata.rendered
-  key_name                    = var.ssh-key-name
-  associate_public_ip_address = true
-  vpc_security_group_ids      = [aws_security_group.kubernetes.id]
-  iam_instance_profile        = aws_iam_instance_profile.k8s-worker.id
-  source_dest_check           = false
-
-  root_block_device {
-    volume_size = var.worker-disk-size
-  }
-
-  depends_on = [aws_internet_gateway.gw]
-
-  tags = merge(local.k8s_cluster_tags, local.k8s_milpa_worker_tag)
 }

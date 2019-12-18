@@ -95,10 +95,6 @@ variable "master-userdata" {
   default = "master.sh"
 }
 
-variable "worker-userdata" {
-  default = "worker.sh"
-}
-
 variable "milpa-worker-userdata" {
   default = "milpa-worker.sh"
 }
@@ -113,11 +109,6 @@ variable "pod-cidr" {
 
 variable "service-cidr" {
   default = "10.96.0.0/12"
-}
-
-variable "workers" {
-  // Number of regular kubelet workers to create in the cluster.
-  default = 0
 }
 
 variable "milpa-workers" {

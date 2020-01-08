@@ -50,8 +50,6 @@ resource "aws_vpc" "main" {
   cidr_block           = var.vpc-cidr
   enable_dns_hostnames = true
 
-  tags = local.k8s_cluster_tags
-
   provisioner "local-exec" {
     # Remove any leftover instance, security group etc Milpa created. They
     # would prevent terraform from destroying the VPC.
@@ -67,8 +65,6 @@ resource "aws_vpc" "main" {
 
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
-
-  tags = local.k8s_cluster_tags
 
   provisioner "local-exec" {
     # Remove any leftover instance, security group etc Milpa created. They

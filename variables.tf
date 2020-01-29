@@ -161,3 +161,9 @@ variable "configure-cloud-routes" {
 variable "ecs-cluster-name" {
   default = ""
 }
+
+variable "container-runtime" {
+  // The primary (non-milpa) container runtime. It can either be "containerd"
+  // or "crio".
+  default = "containerd"
+}

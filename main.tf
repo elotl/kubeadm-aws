@@ -405,10 +405,11 @@ data "template_file" "milpa-worker-userdata" {
   template = file(var.milpa-worker-userdata)
 
   vars = {
-    k8stoken        = local.k8stoken
-    k8s_version     = var.k8s-version
-    masterIP        = aws_instance.k8s-master.private_ip
-    network_plugin  = var.network-plugin
+    k8stoken          = local.k8stoken
+    k8s_version       = var.k8s-version
+    masterIP          = aws_instance.k8s-master.private_ip
+    network_plugin    = var.network-plugin
+    container_runtime = var.container-runtime
   }
 }
 

@@ -7,8 +7,11 @@ EOF
 apt-get update
 apt-get install -y kubelet="${k8s_version}*" kubeadm="${k8s_version}*" kubectl="${k8s_version}*" kubernetes-cni docker.io python-pip jq
 
-# Docker sets the policy for the FORWARD chain to DROP, change it back.
+# Ensure Docker does not block forwarded packets.
 iptables -P FORWARD ACCEPT
+mkdir -p /etc/docker
+echo -e '{\n"iptables": false\n}' > /etc/docker/daemon.json
+systemctl restart docker.service || true
 
 name=""
 while [[ -z "$name" ]]; do

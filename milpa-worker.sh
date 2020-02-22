@@ -1,11 +1,59 @@
 #!/bin/bash -v
 
-curl -fL https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-cat <<EOF > /etc/apt/sources.list.d/kubernetes.list
+backup_binary() {
+    local bin=$1
+    local path=$(which $bin)
+    if [[ -n "$path" ]]; then
+        mv $path $path.orig
+    fi
+}
+
+install_via_apt() {
+    curl -fL https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+    cat <<EOF > /etc/apt/sources.list.d/kubernetes.list
 deb http://apt.kubernetes.io/ kubernetes-xenial main
 EOF
-apt-get update
-apt-get install -y kubelet="${k8s_version}*" kubeadm="${k8s_version}*" kubectl="${k8s_version}*" kubernetes-cni containerd
+    apt-get update
+    apt-get install -y kubelet="${k8s_version}*" kubeadm="${k8s_version}*" kubectl="${k8s_version}*" kubernetes-cni containerd
+}
+
+install_via_curl() {
+    local CNI_VERSION="v0.8.2"
+    rm -rf /opt/cni/bin
+    mkdir -p /opt/cni/bin
+    curl -L "https://github.com/containernetworking/plugins/releases/download/$CNI_VERSION/cni-plugins-linux-amd64-$CNI_VERSION.tgz" | tar -C /opt/cni/bin -xz
+
+    mkdir -p /usr/local/bin
+
+    # Install crictl (required for kubeadm).
+    local CRICTL_VERSION="v1.16.0"
+    backup_binary crictl
+    curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/$CRICTL_VERSION/crictl-$CRICTL_VERSION-linux-amd64.tar.gz" | tar -C /usr/local/bin -xz
+
+    # Install kubeadm, kubelet, kubectl and add a kubelet systemd service.
+    local RELEASE="${k8s_version}"
+    if [[ -z $RELEASE ]]; then
+        RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
+    fi
+
+    cd /usr/local/bin
+    for bin in kubeadm kubelet kubectl; do
+        backup_binary $bin
+    done
+    curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/$RELEASE/bin/linux/amd64/{kubeadm,kubelet,kubectl}
+    chmod +x {kubeadm,kubelet,kubectl}
+
+    rm -rf /etc/systemd/system/kubelet.service
+    curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/$RELEASE/build/debs/kubelet.service" | sed "s:/usr/bin:/usr/local/bin:g" > /etc/systemd/system/kubelet.service
+    rm -rf /etc/systemd/system/kubelet.service.d
+    mkdir -p /etc/systemd/system/kubelet.service.d
+    curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/$RELEASE/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/usr/local/bin:g" > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+
+    systemctl enable --now kubelet
+}
+
+which apt-get && install_via_apt || install_via_curl
+which yum && yum install -y bind-utils
 
 modprobe br_netfilter
 sysctl net.bridge.bridge-nf-call-iptables=1; echo "net.bridge.bridge-nf-call-iptables=1" >> /etc/sysctl.conf
